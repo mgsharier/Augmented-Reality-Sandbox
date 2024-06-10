@@ -13,7 +13,7 @@
 #include <chrono>
 #include <iostream>
 
-class Scene_Perlin2D : public Scene
+class Scene_Grid : public Scene
 {   
     sf::Font            m_font;             
     sf::Text            m_text;
@@ -22,12 +22,6 @@ class Scene_Perlin2D : public Scene
     bool                m_drawGrid = false;
     bool                m_drawGrey = false;
 
-
-    Perlin2DNew         m_perlin;
-    int                 m_octaves = 5;
-    int                 m_seed = 0;
-    int                 m_seedSize = 9;
-    float               m_persistance = 0.5f;
     int                 m_waterLevel = 80;
     bool                m_drawContours = false;
     bool                m_drawContoursInterpolate = false;
@@ -50,11 +44,10 @@ class Scene_Perlin2D : public Scene
     void renderUI();
     void sUserInput();  
     void sRender();
-    void calculateNoise();
     
 public:
 
-    Scene_Perlin2D(GameEngine * game);
+    Scene_Grid(GameEngine * game);
 
     void onFrame();
 };

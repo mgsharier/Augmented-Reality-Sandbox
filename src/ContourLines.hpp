@@ -14,7 +14,7 @@ class ContourLines
 public:
 
     ContourLines()
-    { 
+    {
     }
 
     void init(size_t width, size_t height)
@@ -29,7 +29,7 @@ public:
 
     bool isOnContour(size_t x, size_t y)
     {
-        return m_onContour.get(x,y) == 1;
+        return m_onContour.get(x, y) == 1;
     }
 
     void calculate(const Grid<float>& heightGrid)

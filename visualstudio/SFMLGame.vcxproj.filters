@@ -38,6 +38,9 @@
     <ClCompile Include="..\src\Scene_Menu.cpp">
       <Filter>scenes</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\Scene_Grid.cpp">
+      <Filter>scenes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\Assets.h">
@@ -78,6 +81,12 @@
     </ClInclude>
     <ClInclude Include="..\src\ContourLines.hpp">
       <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ContourLines_Interpolate.hpp">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Scene_Grid.h">
+      <Filter>scenes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

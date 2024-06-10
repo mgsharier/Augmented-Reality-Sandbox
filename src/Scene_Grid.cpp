@@ -1,6 +1,4 @@
-
-
-#include "Scene_Perlin2D.h"
+#include "Scene_Grid.h"
 #include "Scene_Menu.h"
 #include "GameEngine.h"
 #include "Assets.h"
@@ -15,13 +13,13 @@
 #include "imgui-SFML.h"
 
 
-Scene_Perlin2D::Scene_Perlin2D(GameEngine* game)
+Scene_Grid::Scene_Grid(GameEngine* game)
     : Scene(game)
 {
     init();
 }
 
-void Scene_Perlin2D::init()
+void Scene_Grid::init()
 {
     ImGui::GetStyle().ScaleAllSizes(2.0f);
     ImGui::GetIO().FontGlobalScale = 2.0f;
@@ -33,20 +31,29 @@ void Scene_Perlin2D::init()
     m_text.setPosition(10, 5);
     m_text.setCharacterSize(10);
 
-    calculateNoise();
+    std::ifstream fin("grid.txt");
+    int width, height;
+    fin >> width;
+    fin >> height;
+    m_grid = Grid<float>(width, height, 0.5);
+    m_contour.init(width, height);
+    m_contourInterpolate.init(width, height);
+    
+
+    // read the file values into the grid
+    for (size_t y = 0; y < height; y++)
+    {
+        for (size_t x = 0; x < width; x++)
+        {
+            float val;
+            fin >> val;
+            m_grid.set(x, y, val);
+
+        }
+    }
 }
 
-void Scene_Perlin2D::calculateNoise()
-{
-    m_perlin = Perlin2DNew((int)(1 << m_seedSize), (int)(1 << m_seedSize), m_seed);
-    m_grid = m_perlin.GeneratePerlinNoise(m_octaves, m_persistance);
-    m_contour.init((int)(1 << m_seedSize), (int)(1 << m_seedSize));
-    m_contour.calculate(m_grid);
-    m_contourInterpolate.init((int)(1 << m_seedSize), (int)(1 << m_seedSize));
-    m_contourInterpolate.calculate(m_grid);
-}
-
-void Scene_Perlin2D::onFrame()
+void Scene_Grid::onFrame()
 {
     sUserInput();
     sRender();
@@ -54,7 +61,7 @@ void Scene_Perlin2D::onFrame()
     m_currentFrame++;
 }
 
-void Scene_Perlin2D::sUserInput()
+void Scene_Grid::sUserInput()
 {
     sf::Event event;
     while (m_game->window().pollEvent(event))
@@ -78,11 +85,6 @@ void Scene_Perlin2D::sUserInput()
                 m_game->changeScene<Scene_Menu>("Menu");
                 break;
             }
-            case sf::Keyboard::R: { m_seed += 1; calculateNoise(); break; }
-            case sf::Keyboard::W: { m_octaves = std::min(m_octaves + 1, m_seedSize); calculateNoise();  break; }
-            case sf::Keyboard::S: { m_octaves--; calculateNoise();  break; }
-            case sf::Keyboard::A: { m_persistance -= 0.1f; if (m_persistance < 0.1f) { m_persistance = 0.1f; } calculateNoise();  break; }
-            case sf::Keyboard::D: { m_persistance += 0.1f; calculateNoise();  break; }
             case sf::Keyboard::G: m_drawGrey = !m_drawGrey; break;
             case sf::Keyboard::Num2: { m_waterLevel++; break; }
             case sf::Keyboard::Num1: { m_waterLevel--; break; }
@@ -125,7 +127,7 @@ void Scene_Perlin2D::sUserInput()
 }
 
 // renders the scene
-void Scene_Perlin2D::sRender()
+void Scene_Grid::sRender()
 {
     const sf::Color gridColor(64, 64, 64);
 
@@ -175,15 +177,14 @@ void Scene_Perlin2D::sRender()
             }
         }
     }
+    if (m_drawContoursInterpolate)
+    {   
+        m_contourInterpolate.render(m_game->currentScene(), m_gridSize, m_grid);
+    }
 
     if (m_drawContours)
     {
         m_contour.render(m_game->currentScene(), m_gridSize);
-    }
-
-    if (m_drawContoursInterpolate)
-    {
-        m_contourInterpolate.render(m_game->currentScene(), m_gridSize, m_grid);
     }
 
     for (int x = 0; m_drawGrid && x <= (int)m_grid.width(); x++)
@@ -196,17 +197,12 @@ void Scene_Perlin2D::sRender()
         drawLine<float>(0, y * m_gridSize, m_grid.width() * m_gridSize, y * m_gridSize, gridColor);
     }
 
-    if (m_drawContours)
-    {
-
-    }
-
     m_game->window().draw(m_quadArray);
     m_game->window().draw(m_lineStrip);
     m_game->window().draw(m_text);
 }
 
-void Scene_Perlin2D::renderUI()
+void Scene_Grid::renderUI()
 {
     const char vals[7] = { '.', 'G', '@', 'O', 'T', 'S', 'W' };
 
@@ -214,40 +210,24 @@ void Scene_Perlin2D::renderUI()
 
     if (ImGui::BeginTabBar("MyTabBar"))
     {
-        if (ImGui::BeginTabItem("Perlin"))
+        if (ImGui::BeginTabItem("Grid"))
         {
-            if (ImGui::InputInt("Seed", &m_seed, 1, 1000))
-            {
-                calculateNoise();
-            }
-
-            if (ImGui::InputInt("SeedSize", &m_seedSize, 1, 100))
-            {
-                calculateNoise();
-            }
-
-            if (ImGui::InputInt("Octaves", &m_octaves, 1, 20))
-            {
-                calculateNoise();
-            }
-
-            if (ImGui::SliderFloat("Persistance", &m_persistance, 0, 2))
-            {
-                calculateNoise();
-            }
-
+           
             ImGui::SliderInt("Water Level", &m_waterLevel, 0, 255);
 
 
             // PC Display Options
-            ImGui::Checkbox("Greyscale", &m_drawGrey);
-            ImGui::Checkbox("Contours", &m_drawContours);
-            ImGui::SameLine();
-            ImGui::Checkbox("ContoursInt", &m_drawContoursInterpolate);
+            //ImGui::Checkbox("ContoursInt", &m_drawContoursInterpolate);
+            if (ImGui::Checkbox("ContoursInt", &m_drawContoursInterpolate))
+            {
+                m_contourInterpolate.calculate(m_grid);
+            }
+            if (ImGui::Checkbox("Contours", &m_drawContours))
+            {
+                m_contour.calculate(m_grid);
+            }
             if (ImGui::SliderFloat("C Level", &m_contourLevel, 0, 1))
             {
-                m_contour.setContourLevel(m_contourLevel);
-                m_contour.calculate(m_grid);
                 m_contourInterpolate.setContourLevel(m_contourLevel);
                 m_contourInterpolate.calculate(m_grid);
             }
